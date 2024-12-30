@@ -1,0 +1,474 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Form Giải Chi</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'js/scripts.js' %}"></script>
+  </head>
+  <body>
+    <div class="container mt-4">
+      <div class="row align-items-center mb-3">
+        <div>
+          <h4>Quản Lý Giải Chi</h4>
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#formModal">
+            Tạo giải chi
+          </button>
+        </div>
+      </div>
+
+    <div class="modal fade" id="formModal" tabindex="-1" aria-labelledby="formModalLabel">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="formModalLabel">Nhập Liệu Giải Chi</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="container mt-4">
+                <div class="container mt-4">
+                  <form method="POST" enctype="multipart/form-data" >
+                    {% csrf_token %}
+                    <input type="hidden" name="id" id="itemId" value="">
+                    <div class="row mb-3">
+                      <div class="col-md-4">
+                        <label class="form-label">Tên Nhân Viên</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          name="tennv"
+                          value="{{ nhanvien.tennv }}" 
+                          readonly
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">File Hóa Đơn chứng từ (nếu có):</label>
+                        <input type="file" name="file" class="form-control" />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Hình Thức Thanh Toán :</label>
+                        <select class="form-select" name="hinhthucthanhtoan" id="hinhthucthanhtoan" onchange="displayPaymentOptions()">
+                          <option value="0" {% if giaichi.hinhthucthanhtoan == '0' %}selected{% endif %}>Tiền Mặt</option>
+                          <option value="1" {% if giaichi.hinhthucthanhtoan == '1' %}selected{% endif %}>Chuyển Khoản</option>
+                          <option value="2" {% if giaichi.hinhthucthanhtoan == '2' %}selected{% endif %}>Luân Chuyển Nội Bộ</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+            
+                    <div id="payment-details" class="d-none">
+                      <div id="chuyenkhoan" class="d-none">
+                        <div class="row mb-3">
+                          <div class="col-md-6">
+                            <label for="chuyenkhoan-textarea" class="form-label">THÔNG TIN CHUYỂN KHOẢN:</label>
+                            <textarea id="chuyenkhoan-textarea" class="form-control" name="motathanhtoan" rows="4" placeholder="Nhập Thông tin chuyển khoản">{{ giaichi.motathanhtoan }}</textarea>
+                          </div>
+                          <div class="col-md-6">
+                            <label for="code-na" class="form-label">Code NA:</label>
+                            <select id="code-na" name="code_na" class="form-select">
+                              <option value="">Chọn CODE NA</option>
+                              <option value="NA01">NA01</option>
+                              <option value="NA02">NA02</option>
+                              <option value="NA03">NA03</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div id="luanchuyennoitbo" class="d-none">
+                        <label for="luanchuyennoitbo-select" class="form-label">Phòng Ban Nhận Thanh Toán:</label>
+                        <select id="luanchuyennoitbo-select" name="luanchuyennoitbo" class="form-select">
+                            {% for pb in phongban_list %}
+                            <option value="{{ pb.mapb }}" {% if giaichi.phongban_mapb == pb.mapb %}selected{% endif %}>
+                              {{ pb.tenpb }}
+                            </option>
+                            {% empty %}
+                                <option disabled>Không có phòng ban</option>
+                            {% endfor %}
+                        </select>            
+                      </div>
+                    </div>
+                    <div class="row mb-3 align-items-center mt-3">
+                      <div class="col-md-4">
+                        <label class="form-label">Email</label>
+                        <input
+                          type="email"
+                          class="form-control"
+                          value="{{ nhanvien.emailnv }}" 
+                          readonly
+                        />
+                      </div>
+                      
+            
+                      <div class="col-md-4">
+                        <label class="form-label">Số Tiền Giải Chi:</label>
+                        <div class="input-group">
+                          <input
+                            type="number"
+                            name="tiengiaichi"
+                            class="form-control"
+                            placeholder="Nhập số tiền"
+                            value="{{ giaichi.tiengiaichi }}"
+                            aria-label="Số Tiền Giải Chi"
+                          />
+                          <span class="input-group-text">VND</span>
+                        </div>
+                      </div>
+            
+                      <div class="col-md-4">
+                        <label class="form-label">Thông Tin Nhân Viên Nhận Tiền:</label>
+                        <select class="form-select">
+                          <option value="{{ nhanvien.id }}" selected>{{ nhanvien.tennv }}</option>
+                          {% for nv in nhanvien_list %}
+                            <option value="{{ nv.id }}">{{ nv.tennv }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+            
+                    <div class="row mb-3">
+                      <div class="col-md-4">
+                        <label class="form-label">Giải Chi Thuộc Công Ty</label>
+                        <select class="form-select" name="giaichithuoc">
+                          <option value="0" {% if giaichi.giaichithuoc == '0' %}selected{% endif %}>ĐÔNG SAPA - DỰ ÁN</option>
+                          <option value="1" {% if giaichi.giaichithuoc == '1' %}selected{% endif %}>NAM SAPA - DỰ ÁN</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Số BN (nếu có):</label>
+                        <input type="text" class="form-control" name="bn_code" value="{{ giaichi.bn_code }}" />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">ID công nợ mh:</label>
+                        <input type="text" class="form-control" name="id_congno" value="{{ giaichi.id_congno }}" />
+                      </div>
+                    </div>
+            
+                    <div class="mb-3">
+                      <label class="form-label">Ghi Chú:</label>
+                      <textarea type="text" class="form-control" name="ghichu" value="{{ giaichi.ghichu }}" placeholder="Nhập Ghi Chú" >{{giaichi.ghichu}}</textarea>
+                    </div>
+            
+                    <div class="row mb-3">
+                      <div class="col-md-4">
+                        <label class="form-label fw-bold">TKno</label>
+                        <select class="form-select" name="tkno">
+                          <option value="">Chọn TKno</option>
+                          {% for tk in tknos %}
+                            <option value="{{ tk.id }}" {% if giaichi.tkno == tk.id %}selected{% endif %}>{{ tk.tentkno }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="col-md-4 fw-bold">
+                        <label class="form-label">YTno</label>
+                        <select class="form-select" name="ytno">
+                          <option value="">Chọn YTno</option>
+                          {% for yt in ytnos %}
+                            <option value="{{ yt.id }}" {% if giaichi.ytno == yt.id %}selected{% endif %}>{{ yt.tenytno }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+            
+                    <div class="row mb-3 align-items-center">
+                      <div class="col-md-6 d-flex align-items-center">
+                        <div class="form-check me-3">
+                          <input class="form-check-input" type="checkbox" id="vatCheckbox" name="vatCheckbox" {% if giaichi.vat %}checked{% endif %} />
+                          <label class="form-check-label" for="vatCheckbox">
+                            VAT (Có thì check)
+                          </label>
+                        </div>
+                        <input
+                          type="text"
+                          id="vatInput"
+                          class="form-control"
+                          placeholder="Nhập số VAT"
+                          name="vat"
+                          value="{{ giaichi.vat }}"
+                          {% if not giaichi.vat %}disabled{% endif %}
+                          style="max-width: 200px"
+                        />
+                        <label class="form-check-label" for="vatCheckbox"> VND </label>
+                      </div>
+            
+                      <div class="col-md-6">
+                        <label class="form-label row fw-bold">Giải Chi</label>
+                        <div class="form-check form-check-inline">
+                          <input
+                            class="form-check-input"
+                            type="radio"
+                            name="giaiChi"
+                            id="dongSapa"
+                            value="0"
+                            {% if giaichi.giaichithuoc == '0' %}checked{% endif %}
+                          />
+                          <label class="form-check-label" for="dongSapa">ĐÔNG SAPA</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                          <input
+                            class="form-check-input"
+                            type="radio"
+                            name="giaiChi"
+                            id="namSapa"
+                            value="1"
+                            {% if giaichi.giaichithuoc == '1' %}checked{% endif %}
+                          />
+                          <label class="form-check-label" for="namSapa">NAM SAPA</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                          <input
+                            class="form-check-input"
+                            type="radio"
+                            name="giaiChi"
+                            id="khac"
+                            value="2"
+                            {% if giaichi.giaichithuoc == '2' %}checked{% endif %}
+                          />
+                          <label class="form-check-label" for="khac">KHÁC</label>
+                        </div>
+                      </div>
+                    </div>
+            
+                    <div class="mb-3">
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="tieude"
+                        placeholder="Nhập Tiêu Đề Giải Chi"
+                        value="{{ giaichi.tieude }}"
+                      />
+                    </div>
+            
+                    <div class="row mb-3">
+                      <div class="col-md-4">
+                        <label class="form-label">Gửi duyệt</label>
+                        <select class="form-select" name="guiduyet">
+                          <option value="0" {% if giaichi.guiduyet == '0' %}selected{% endif %}>Gửi TGĐ & TCKT</option>
+                          <option value="1" {% if giaichi.guiduyet == '1' %}selected{% endif %}>Gửi TP |GĐ</option>
+                        </select>
+                      </div>
+                    </div>
+            
+                    <div class="mb-3">
+                      <textarea id="editor" name="editor">{{ giaichi.editor }}</textarea>
+                    </div>
+            
+                    <div class="row mb-3">
+                      <div class="col-md-6 offset-md-3">
+                        <label class="form-label fw-bold text-center d-block">Giải Chi Thuộc:</label>
+                        <select class="form-select text-center" name="giaichithuoc">
+                          <option value="0" {% if giaichi.giaichithuoc == '0' %}selected{% endif %}>ĐÔNG SAPA - DỰ ÁN</option>
+                          <option value="1" {% if giaichi.giaichithuoc == '1' %}selected{% endif %}>NAM SAPA - DỰ ÁN</option>
+                          <option value="2" {% if giaichi.giaichithuoc == '2' %}selected{% endif %}>KHÁC</option>
+                        </select>
+                      </div>
+                    </div>
+            
+                    <div class="text-center">
+                      <button type="submit" class="btn btn-primary">Gửi Giải Chi</button>
+                    </div>
+                  </form>
+                </div> 
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+          </div>
+        </div>
+      </div>
+    </div>  
+
+
+    <!-- List -->
+    <div class="container mt-5">
+      <div class="table-responsive" style="max-width: 100%; overflow-x: auto;">
+        <table class="table table-striped table-bordered" id="giaichi-items-table">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Tên Nhân Viên</th>
+              <th>File Hóa Đơn Chứng Từ (nếu có)</th>
+              <th>Hình Thức Thanh Toán</th>
+              <th>Email</th>
+              <th>Số Tiền Giải Chi</th>
+              <th>Thông Tin Nhân Viên Nhận Tiền</th>
+              <th>Giải Chi Thuộc Công Ty</th>
+              <th>Số BN (nếu có)</th>
+              <th>ID công nợ mh</th>
+              <th>Ghi Chú</th>
+              <th>TKno</th>
+              <th>YTno</th>
+              <th>VAT</th>
+              <th>Giải Chi</th>
+              <th>Tiêu Đề</th>
+              <th>Gửi Duyệt</th>
+              <th>Nội Dung Mô Tả</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="item-body">
+            {% for item in page_obj  %}
+            <tr id="item-{{ item.id }}">
+                <td>{{ item.id }}</td>
+                <td>{{ item.nhanvien.tennv|default:"Chưa có thông tin" }}</td>
+                <td>{{ item.file_hoadon|default:"Chưa chọn" }}</td>
+                <td>{{ item.get_hinhthucthanhtoan_display|default:"Chưa có thông tin" }}</td>
+                <td>{{ item.nhanvien.email|default:"Chưa có thông tin" }}</td>
+                <td>{{ item.tiengiaichi|default:"0" }}</td>
+                <td>{{ item.thongtinnhanvien|default:"Chưa có thông tin" }}</td>
+                <td>{{ item.giaichithuoc|default:"Chưa có thông tin" }}</td>
+                <td>{{ item.so_bn|default:"Chưa có thông tin" }}</td>
+                <td>{{ item.id_congno|default:"Chưa có thông tin" }}</td>
+                <td>{{ item.ghichu|default:"Chưa có thông tin" }}</td>
+                <td>{{ item.tkno|default:"Chưa chọn" }}</td>
+                <td>{{ item.ytno|default:"Chưa chọn" }}</td>
+                <td>{{ item.vat|default:"0%" }}</td>
+                <td>{{ item.giaichi|default:"Chưa có thông tin" }}</td>
+                <td>{{ item.tieude|default:"Chưa có thông tin" }}</td>
+                <td>{{ item.get_guiduyet_display|default:"Chưa có thông tin" }}</td>
+                <td style="white-space: normal; font-size: 14px;">{{ item.noidungmota|default:"Chưa có thông tin"|safe }}</td>
+                <td>
+                  <div class="dropdown">
+                    <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <li><button class="delete-btn dropdown-item" data-id="{{item.id}}" type="button">Xóa</button></li>
+                        <li><button class="edit-btn dropdown-item" data-id="{{item.id}}" type="button">Cập nhật</button></li>
+                    </ul>
+                </div>
+              </td>
+            </tr>
+            {% empty %} 
+            <tr>
+                <td colspan="18" class="text-center">Không có dữ liệu</td>
+            </tr>
+            {% endfor %}
+          </tbody>        
+
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page=1" aria-label="First">
+                <span >&laquo;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                <span >&lt;</span>
+              </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+              <li class="page-item active">
+                <a class="page-link" href="#">{{ num }}</a>
+              </li>
+              {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+              </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                <span >&gt;</span>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                <span >&raquo;</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+        
+      </table>
+      </div>
+    </div>
+  </body>
+  <script>
+    const vatCheckbox = document.getElementById("vatCheckbox");
+    const vatInput = document.getElementById("vatInput");
+    var createUrl = "{% url 'giaichi_create' %}";
+
+    vatCheckbox.addEventListener("change", function () {
+      vatInput.disabled = !vatCheckbox.checked;
+      if (!vatCheckbox.checked) {
+      vatInput.value = ""; 
+      vatInput.removeAttribute("required"); 
+      } else {
+        vatInput.setAttribute("required", "true"); 
+      }
+    });
+
+    form.addEventListener("submit", function (event) {
+      if (vatCheckbox.checked && !vatInput.value.trim()) {
+        alert("Vui lòng nhập số VAT khi checkbox VAT được chọn.");
+        event.preventDefault();
+      }
+    });
+  </script>
+  <script>
+    function displayPaymentOptions() {
+      var selectedPayment = document.getElementById('hinhthucthanhtoan').value;
+      var paymentDetails = document.getElementById('payment-details');
+      var chuyenkhoan = document.getElementById('chuyenkhoan');
+      var luanchuyennoitbo = document.getElementById('luanchuyennoitbo');
+
+      paymentDetails.classList.remove('d-none');
+
+      chuyenkhoan.classList.add('d-none');
+      luanchuyennoitbo.classList.add('d-none');
+
+      if (selectedPayment == '1') {
+        chuyenkhoan.classList.remove('d-none');
+      } else if (selectedPayment == '2') {
+        luanchuyennoitbo.classList.remove('d-none');
+      }
+    }
+
+    window.onload = function () {
+      displayPaymentOptions();
+    };
+  </script>
+
+  <script src="https://cdn.ckeditor.com/4.18.0/standard/ckeditor.js"></script>
+  <script>
+    CKEDITOR.replace("editor", {
+      filebrowserUploadUrl: "/ckeditor/upload/",
+      filebrowserBrowseUrl: "/ckeditor/browse/",
+    });
+  </script>
+
+  <!-- List -->
+
+  <script>
+    function toggleActionsMenu(element) {
+    const menu = element.nextElementSibling;
+    menu.style.display = menu.style.display === "none" || !menu.style.display ? "block" : "none";
+    }
+
+    function deleteRow(button) {
+        alert("Xoa");
+    }
+
+    function updateRow(button) {
+        alert("Cap nhat");
+    }
+  </script>
+</html>
+
+
+
